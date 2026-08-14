@@ -1,4 +1,4 @@
-# ปล่อยรุ่นใหม่ของปลั๊กอิน aff-timelapse
+﻿# ปล่อยรุ่นใหม่ของปลั๊กอิน aff-timelapse
 #
 #   .\release.ps1 1.5.1 "สรุปสั้นๆ ว่าแก้อะไร"
 #
@@ -36,11 +36,21 @@ if ($escapes) {
 }
 
 # ── 2. เลื่อนเลขเวอร์ชันสองที่ให้ตรงกัน ──────────────────────────────────
+$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 foreach ($f in @($pluginJson, $marketJson)) {
-  $raw = Get-Content $f -Raw -Encoding utf8
+  $raw = [System.IO.File]::ReadAllText($f, $utf8NoBom)
+  # เช็คว่า "หาไม่เจอ" กับ "เจอแล้วแต่เลขเท่าเดิม" แยกกัน — สองอย่างนี้ทำให้ไฟล์ไม่เปลี่ยนเหมือนกัน
+  # แต่คนละเรื่องกันสิ้นเชิง ถ้าเหมาว่าไฟล์ไม่เปลี่ยน = หาไม่เจอ จะได้ข้อความผิดตอนรันซ้ำ
+  $m = [regex]::Match($raw, '"version":\s*"([^"]*)"')
+  if (-not $m.Success) { throw "หาบรรทัด version ใน $f ไม่เจอ" }
+  if ($m.Groups[1].Value -eq $Version) {
+    Write-Host "· $([System.IO.Path]::GetFileName($f)) เป็น $Version อยู่แล้ว ข้ามการแก้" -ForegroundColor DarkGray
+    continue
+  }
   $new = [regex]::Replace($raw, '"version":\s*"[^"]*"', """version"": ""$Version""", 1)
-  if ($new -eq $raw) { throw "หาบรรทัด version ใน $f ไม่เจอ" }
-  Set-Content -Path $f -Value $new -Encoding utf8 -NoNewline
+  # ⚠️ ต้องเขียนแบบ **ไม่มี BOM** — `Set-Content -Encoding utf8` ของ Windows PowerShell 5.1
+  #    ใส่ BOM ให้เอง แล้วตัวอ่าน JSON จะพังด้วย "Unrecognized token"
+  [System.IO.File]::WriteAllText($f, $new, $utf8NoBom)
 }
 Write-Host "✔ เลื่อนเวอร์ชันเป็น $Version แล้วทั้ง plugin.json และ marketplace.json" -ForegroundColor Green
 

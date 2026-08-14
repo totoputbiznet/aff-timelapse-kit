@@ -17,7 +17,7 @@
 |---|---|
 | `/aff-timelapse:scene <ลิงก์>` | ครบทั้งเส้น (มีจุดหยุดรอ 3 จุด) |
 | `/aff-timelapse:product <ลิงก์>` | เก็บสินค้าจาก Shopee |
-| `/aff-timelapse:idea <slug>` | ไอเดีย 5 แบบ → CAMERA LOCK + พรอมต์ **Phase 4 (ภาพหมุด)** |
+| `/aff-timelapse:idea <slug>` | ไอเดีย 4 แบบให้กดเลือก → CAMERA LOCK + พรอมต์ **Phase 4 (ภาพหมุด)** |
 | `/aff-timelapse:phase3 <scene>` | พรอมต์แก้ภาพ → งานเสร็จ แต่ยังไม่จัดของ |
 | `/aff-timelapse:phase2 <scene>` | พรอมต์แก้ภาพ → ระหว่างทำ |
 | `/aff-timelapse:phase1 <scene>` | พรอมต์แก้ภาพ → ว่างเปล่า |
