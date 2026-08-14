@@ -10,6 +10,22 @@ effort: high
 
 ---
 
+## จังหวะการทำงาน — รายงานแล้วไปต่อเอง
+
+จบขั้นไหน **รายงานผลสั้นๆ 1-3 บรรทัดแล้วทำขั้นถัดไปต่อทันที** ไม่ต้องขออนุญาต
+รายงานให้บอก**ผลที่วัดได้** (ได้ไฟล์อะไร กี่รูป ผ่านหรือไม่ผ่าน) ไม่ใช่บอกว่ากำลังจะทำอะไร
+
+**หยุดรอผู้ใช้เฉพาะ 3 กรณีนี้เท่านั้น:**
+
+| หยุดเมื่อ | ตัวอย่าง |
+|---|---|
+| ต้องให้ผู้ใช้**ตัดสินใจ** | เลือกไอเดีย · รับหรือไม่รับภาพ · จะเขียนทับของเดิมไหม |
+| ต้องให้ผู้ใช้**ไปทำเองบนเว็บ** | ยิงภาพหรือวิดีโอที่ Higgsfield |
+| **ติดปัญหาที่แก้เองไม่ได้** | Chrome ไม่เชื่อมต่อ · ไม่มีไฟล์ที่ต้องใช้ · คำสั่งที่ต้องใช้ไม่มีในเครื่อง |
+
+นอกจากสามข้อนี้ **ห้ามถามว่า "จะให้ทำต่อไหม"** — ทำต่อได้เลย
+ขั้นที่พังไม่ได้แปลว่าต้องหยุดทั้งงาน **ทำขั้นที่เหลือให้จบแล้วค่อยบอกว่าขั้นไหนไม่สำเร็จเพราะอะไร**
+
 ## ก่อนเริ่ม
 
 ต้องมี `scenes/<scene-slug>/scene.md` (มี CAMERA LOCK) และ `frames/phase4.png`
@@ -57,36 +73,37 @@ effort: high
 ## ขั้นที่ 3 — เขียนไฟล์
 
 > ⛔ **พรอมต์แก้ภาพที่ยาวเกินจะ Generation failed ไปเลย** ไม่ใช่แค่ผลไม่ดี
-> ใช้โครง 5 บรรทัดเดียวกับ `../phase1/SKILL.md` — ไม่เกิน ~1,400 ตัวอักษร
+> ใช้โครง JSON เดียวกับ `../phase1/SKILL.md` — ไม่เกิน ~1,400 ตัวอักษร
+> (JSON กินเพิ่มราว 70-100 ตัวอักษร เผื่อไว้ตอนนับ)
 > บรรยายสภาพปลายทางเป็นประโยคบอกเล่า ห้ามใส่พิกัด % ห้ามมีบล็อกคำสั่งห้ามยาวๆ
+
+**ค่าในทุกคีย์เป็นภาษาอังกฤษ** หัวข้อกับคำอธิบายรอบๆ เป็นไทย
 
 ````markdown
 # Phase 2 — ระหว่างจัด / ระหว่างทำ
 
 ยิงที่ Higgsfield เว็บ · **โหมดแก้ภาพ ใส่ `frames/phase4.png` เป็นภาพตั้งต้น** · 9:16
 
-```
-Reference Image 1. Same <ชนิดพื้นที่>, same camera angle and position.
-
-Scene: Mid-installation phase. <ของที่ทำไปแล้วบางส่วน พร้อมสัดส่วนเป็นคำ เช่น
-the far third is already done, the near two thirds is still bare>. <วัสดุกองรอ
-วางตรงไหน>. <ของกันเปื้อน คลุมตรงไหน>. <เครื่องมือ 3-4 ชิ้น วางตรงไหน>.
-The finished furniture and plants are not there yet.
-
-Subject: One worker in a cap and a plain grey t-shirt, seen from behind,
-motion-blurred mid-stride, carrying <อะไร>, near the <ริมไหน> edge of the frame and
-partly cropped by it.
-
-Camera: Exact same static wide-angle position as Image 1, same <ชนิดเพอร์สเปกทีฟ>,
-same framing, 9:16 vertical composition. <หมุดอ้างอิง 3-4 อย่างเป็นประโยคเดียว>
-all stay in exactly the same place.
-
-Lighting: Same <ทิศและช่วงเวลาแสง>, same <เงาเด่นๆ>, natural light only.
-
-Style: Photorealistic, construction documentation photography, progress
-documentation aesthetic.
+```json
+{
+  "reference": "Image 1. Same <ชนิดพื้นที่>, same camera angle and position.",
+  "camera": "Exact same static wide-angle position as Image 1, same <ชนิดเพอร์สเปกทีฟ>, same framing, 9:16 vertical composition. <หมุดอ้างอิง 3-4 อย่างเป็นประโยคเดียว> all stay in exactly the same place.",
+  "scene": "Mid-installation phase. <ของที่ทำไปแล้วบางส่วน พร้อมสัดส่วนเป็นตัวเลข เช่น 3 of the 8 timber slats already fixed>. <วัสดุกองรอวางตรงไหน — ต้องเป็นวัสดุของงาน P2→P3 เท่านั้น>. <ของกันเปื้อน คลุมตรงไหน>. <เครื่องมือ 3-4 ชิ้น วางตรงไหน>. The finished furniture and plants are not there yet.",
+  "subject": "One worker in a cap and a plain grey t-shirt, seen from behind, motion-blurred mid-stride, carrying <อะไร>, near the <ริมไหน> edge of the frame and partly cropped by it.",
+  "product": "<สภาพของสินค้าตอนนี้ — ติดไปแล้วกี่ส่วน หรือยังอยู่ในกล่อง>",
+  "palette": "<โทนสีตอนกำลังทำ — วัสดุดิบ ผ้าใบ กล่องน้ำตาล>",
+  "lighting": "Same <ทิศและช่วงเวลาแสง>, same <เงาเด่นๆ>, natural light only.",
+  "style": "Photorealistic, construction documentation photography, progress documentation aesthetic."
+}
 ```
 ````
+
+**บล็อกต้องเปิดด้วย ` ```json ` เป๊ะๆ** ไม่งั้น `check-phase-prompt.mjs` หาไม่เจอ
+
+> ⛔ **วัสดุกองรอต้องเป็นวัสดุของงาน P2→P3 เท่านั้น** ห้ามเอาของที่จะติดตั้งใน seg3 มากองไว้
+> ไม่งั้นได้ลำดับ **เข้า → ออก → เข้า** ซึ่งขัดสามัญสำนึกคนดู (เกิดมาแล้วทั้งสองฉากของสินค้าศาลา)
+> ตัวตรวจเรียกอาการนี้ว่า **styling-leak** และ **ห้ามแก้ด้วยการยัดวัสดุเข้า P3**
+> เพราะ P3 คือเฟรมโชว์สินค้าครบชุด ต้องสะอาด
 
 **เรื่องคนงาน — `seen from behind, motion-blurred mid-stride` พอแล้ว**
 ไม่ต้องมีบล็อก `no clear face, no one looking at camera, no posed person` ยาวๆ
@@ -95,9 +112,23 @@ documentation aesthetic.
 
 ---
 
+## ขั้นที่ 4 — ตรวจพรอมต์ด้วยคำสั่งก่อนส่งให้ยิง ⭐ ห้ามข้าม
+
+```bash
+node tools/check-phase-prompt.mjs scenes/<scene-slug> prompts/phase2.md
+```
+
+**ใบนี้คือใบที่ตัวตรวจจับของได้บ่อยที่สุด** เพราะ P2 มีทั้งของที่ยังไม่เกิดและวัสดุกองรอ
+
+| เจอ | ทำยังไง |
+|---|---|
+| **ERROR** — ของกลุ่ม `product` ไม่ถูกเอ่ยถึง | เขียนว่าคงไว้หรือสั่งให้หายอย่างใดอย่างหนึ่ง **แก้จนหมด** |
+| **styling-leak** | เอาวัสดุ/ของตกแต่งของ seg3 ออกจากใบนี้ ห้ามย้ายไป P3 |
+| **WARN ที่ขึ้นว่า `product·ยังไม่เกิด`** | ปกติ — แต่เขียนว่า "ยังอยู่ในกล่อง" ชัดกว่าไม่พูดถึงเลย |
+
 ## ขั้นสุดท้าย — ส่งมอบ
 
-1. **วางพรอมต์ในกล่องโค้ดให้ก๊อปได้ทันที**
+1. **วางพรอมต์ในกล่องโค้ดให้ก๊อปได้ทันที** พร้อมบอกผลตรวจ (ERROR 0 · leak 0)
 2. ย้ำว่าภาพตั้งต้นคือ `frames/phase4.png` **ไม่ใช่ phase1.png**
 3. **ยิงเสร็จบนเว็บแล้วบอกได้เลย ไม่ต้องเซฟไฟล์เอง** — ดึงด้วย Higgsfield MCP
    `show_generations` แล้วโหลด `results.rawUrl` ลง `scenes/<scene-slug>/frames/phase2.png`

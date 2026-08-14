@@ -10,6 +10,22 @@ effort: high
 
 ---
 
+## จังหวะการทำงาน — รายงานแล้วไปต่อเอง
+
+จบขั้นไหน **รายงานผลสั้นๆ 1-3 บรรทัดแล้วทำขั้นถัดไปต่อทันที** ไม่ต้องขออนุญาต
+รายงานให้บอก**ผลที่วัดได้** (ได้ไฟล์อะไร กี่รูป ผ่านหรือไม่ผ่าน) ไม่ใช่บอกว่ากำลังจะทำอะไร
+
+**หยุดรอผู้ใช้เฉพาะ 3 กรณีนี้เท่านั้น:**
+
+| หยุดเมื่อ | ตัวอย่าง |
+|---|---|
+| ต้องให้ผู้ใช้**ตัดสินใจ** | เลือกไอเดีย · รับหรือไม่รับภาพ · จะเขียนทับของเดิมไหม |
+| ต้องให้ผู้ใช้**ไปทำเองบนเว็บ** | ยิงภาพหรือวิดีโอที่ Higgsfield |
+| **ติดปัญหาที่แก้เองไม่ได้** | Chrome ไม่เชื่อมต่อ · ไม่มีไฟล์ที่ต้องใช้ · คำสั่งที่ต้องใช้ไม่มีในเครื่อง |
+
+นอกจากสามข้อนี้ **ห้ามถามว่า "จะให้ทำต่อไหม"** — ทำต่อได้เลย
+ขั้นที่พังไม่ได้แปลว่าต้องหยุดทั้งงาน **ทำขั้นที่เหลือให้จบแล้วค่อยบอกว่าขั้นไหนไม่สำเร็จเพราะอะไร**
+
 ## ทำไมต้องมีเฟสนี้
 
 **วัดมาแล้วจากงานจริง** ตอนที่ยังมี 3 เฟส คลิปสุดท้ายต้องทำสองงานพร้อมกันใน 10 วินาที —
@@ -44,43 +60,51 @@ effort: high
 > ⚠️ **จุดที่พลาดง่ายที่สุด: สินค้าเปลี่ยนหน้าตาระหว่างเอาเฟอร์นิเจอร์ออก**
 > ต้องเขียนย้ำว่า `exactly as in Image 1` กำกับตัวสินค้าเสมอ ไม่งั้นโมเดลถือโอกาสวาดใหม่
 
-## ขั้นที่ 2 — เขียนไฟล์ (โครง 5 บรรทัดเดียวกับ phase1/phase2)
+## ขั้นที่ 2 — เขียนไฟล์ (โครง JSON เดียวกับ phase1/phase2)
 
 > ⛔ ไม่เกิน ~1,200 ตัวอักษร · ประโยคบอกเล่าล้วน · ห้ามใส่พิกัด % · ห้ามมีบล็อกคำสั่งห้ามยาวๆ
 > (พรอมต์แก้ภาพที่ยาวเกินจะ **Generation failed ไปเลย** ไม่ใช่แค่ผลไม่ดี)
+> JSON กินเพิ่มราว 70-100 ตัวอักษร เผื่อไว้ตอนนับ
+
+**ค่าในทุกคีย์เป็นภาษาอังกฤษ** หัวข้อกับคำอธิบายรอบๆ เป็นไทย
 
 ````markdown
 # Phase 3 — งานเสร็จ แต่ยังไม่ได้จัดของ
 
 ยิงที่ Higgsfield · **โหมดแก้ภาพ ใส่ `frames/phase4.png` เป็นภาพตั้งต้น** · 9:16
 
-```
-Reference Image 1. Same <ชนิดพื้นที่>, same camera angle and position.
-
-Scene: The <ชื่องาน> work is finished but the <พื้นที่> has not been furnished yet.
-<สินค้าที่ติดตั้งแล้ว> exactly as in Image 1. The floor is completely clear and
-freshly swept, with no furniture, no tools and no leftover material anywhere.
-<สิ่งที่ไม่เปลี่ยน> are unchanged.
-
-Subject: A finished but completely empty <พื้นที่>, ready to be furnished. No people,
-no furniture, no <ไล่ชื่อของที่ต้องหาย>.
-
-Camera: Exact same static wide-angle position as Image 1, same <ชนิดเพอร์สเปกทีฟ>,
-same framing, 9:16 vertical composition. <หมุดอ้างอิง 3-4 อย่างเป็นประโยคเดียว>
-all stay in exactly the same place.
-
-Lighting: Same <ทิศและช่วงเวลาแสง>, same <เงาเด่นๆ>.
-
-Style: Photorealistic, architectural documentation photography, freshly completed
-installation.
+```json
+{
+  "reference": "Image 1. Same <ชนิดพื้นที่>, same camera angle and position.",
+  "camera": "Exact same static wide-angle position as Image 1, same <ชนิดเพอร์สเปกทีฟ>, same framing, 9:16 vertical composition. <หมุดอ้างอิง 3-4 อย่างเป็นประโยคเดียว> all stay in exactly the same place.",
+  "scene": "The <ชื่องาน> work is finished but the <พื้นที่> has not been furnished yet. The floor is completely clear and freshly swept, with no furniture, no tools and no leftover material anywhere. <สิ่งที่ไม่เปลี่ยน> are unchanged.",
+  "subject": "A finished but completely empty <พื้นที่>, ready to be furnished. No people, no furniture, no <ไล่ชื่อของที่ต้องหาย>.",
+  "product": "<สินค้าที่ติดตั้งแล้ว> exactly as in Image 1, complete and unchanged.",
+  "palette": "<โทนสีของงานที่เพิ่งเสร็จ>",
+  "lighting": "Same <ทิศและช่วงเวลาแสง>, same <เงาเด่นๆ>.",
+  "style": "Photorealistic, architectural documentation photography, freshly completed installation."
+}
 ```
 ````
+
+**บล็อกต้องเปิดด้วย ` ```json ` เป๊ะๆ** ไม่งั้น `check-phase-prompt.mjs` หาไม่เจอ
+
+**คีย์ `product` ของใบนี้ต้องครบชุด** — P3 คือเฟรมที่โชว์สินค้าเต็มชุดครั้งแรก
+ถ้าเขียนคลุมเครือ ตัวตรวจจะขึ้น ERROR และคลิป seg3 จะไม่มีอะไรให้ยกเข้ามาจัด
+
+## ขั้นที่ 3 — ตรวจพรอมต์ด้วยคำสั่งก่อนส่งให้ยิง ⭐ ห้ามข้าม
+
+```bash
+node tools/check-phase-prompt.mjs scenes/<scene-slug> prompts/phase3.md
+```
+
+ERROR ต้องเป็น 0 · styling-leak ต้องเป็น 0 (ของตกแต่งที่ยกเข้ามาใน seg3 ห้ามอยู่ในใบนี้)
 
 ---
 
 ## ขั้นสุดท้าย
 
-1. **วางพรอมต์เต็มใบในกล่องโค้ดให้ก๊อปได้ทันที**
+1. **วางพรอมต์เต็มใบในกล่องโค้ดให้ก๊อปได้ทันที** พร้อมบอกผลตรวจ (ERROR 0 · leak 0)
 2. ย้ำว่าภาพตั้งต้นคือ `frames/phase4.png`
 3. ยิงเสร็จบอกได้เลย ไม่ต้องเซฟเอง — ดึงผ่าน MCP ลง `frames/phase3.png`
 4. **เปิดดูแล้ววัดหมุดเทียบทั้ง 4 เฟส เขียนตารางลง `prompts/phase3.md`**
