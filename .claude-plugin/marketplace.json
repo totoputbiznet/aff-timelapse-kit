@@ -1,6 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "homey-vibes",
+  "description": "ชุดเครื่องมือทำคลิป Reels แนว timelapse ตกแต่งบ้านที่มีสินค้าแอฟฟิลิเอตอยู่ในคลิป",
   "owner": {
     "name": "Itthiphon Thanadkunkit"
   },
