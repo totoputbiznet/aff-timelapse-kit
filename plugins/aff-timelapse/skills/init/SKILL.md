@@ -2,6 +2,7 @@
 description: ใช้เมื่อ**เพิ่งติดตั้งปลั๊กอินนี้แล้วยังไม่มีโฟลเดอร์งาน** — สร้างโครงโปรเจค timelapse ให้ใหม่ทั้งชุด (คู่มือ CLAUDE.md · Timelapse_Blueprint_V1.md · ตัวตรวจใน tools/ · ฟอนต์ไทย · โฟลเดอร์ products กับ scenes) โดย**ถามก่อนว่าจะเก็บไว้ที่ไหน** Trigger on "ตั้งโปรเจคใหม่", "เริ่มใช้ชุดนี้ยังไง", "สร้างโฟลเดอร์งานให้หน่อย", "ยังไม่มีโปรเจค", "init โปรเจค timelapse" ทำครั้งเดียวตอนเริ่ม — ถ้ามีโฟลเดอร์งานอยู่แล้วให้ไปที่ product หรือ scene แทน
 argument-hint: "[path ที่อยากเก็บ (ไม่ใส่ก็ได้ เดี๋ยวถามให้)]"
 allowed-tools: Bash(cp *), Bash(mkdir *), Bash(ls *), Bash(node *)
+model: sonnet
 ---
 
 สร้างโครงโปรเจค timelapse ให้ใหม่: **$ARGUMENTS**

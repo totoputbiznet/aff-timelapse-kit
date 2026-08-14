@@ -2,6 +2,7 @@
 description: ใช้เมื่อได้คลิปครบ 3 ท่อนแล้วและต้องการ**รวมเป็นรีลเดียว 9:16 พร้อมค้างภาพจบ** — เก็บเสียง ASMR เดิมจากคลิปไว้ทั้งหมด ไม่ใส่ดนตรี ไม่ใส่เสียงพากย์ **และไม่ใส่ตัวหนังสือบนจอ** Trigger on "รวมคลิปให้หน่อย", "ตัดต่อรีลนี้", "ต่อ seg1 seg2 seg3", "ทำไฟล์ส่งออก 9:16" ต้องมี `clips/seg1.mp4` `seg2.mp4` `seg3.mp4` ก่อน · นี่คือขั้นสุดท้ายของงาน
 argument-hint: "[scene-slug]"
 allowed-tools: Bash(ffprobe *), Bash(ffmpeg *), Bash(npx hyperframes *)
+model: sonnet
 ---
 
 รวมคลิปเป็นรีลของฉาก: **$ARGUMENTS**
