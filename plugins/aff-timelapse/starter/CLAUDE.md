@@ -23,6 +23,7 @@
 | `/aff-timelapse:phase1 <scene>` | พรอมต์แก้ภาพ → ว่างเปล่า |
 | `/aff-timelapse:storyboard <scene>` | สตอรีบอร์ด F2F **3 ช่วง ช่วงละ 8 วิ** + ตรวจคลิป |
 | `/aff-timelapse:assemble <scene>` | รวมคลิป 9:16 ด้วย ffmpeg |
+| `/aff-timelapse:study <ลิงก์รีล>` | **ขาเข้า** — ถอดโครงช็อตจากรีลเพจอื่น สะสมลง `timelapse_master_prompt.md` |
 
 ## โครงสร้างโฟลเดอร์
 
