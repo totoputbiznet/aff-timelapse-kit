@@ -97,11 +97,17 @@ const raw = run('ffmpeg', ['-v', 'error', '-i', file,
 
 const frameCount = raw ? Math.floor(raw.length / (PW * PH)) : 0;
 
-// แถบกลางเฟรม (แถว 40–60%) เฉลี่ยลงเป็นโปรไฟล์ 1 มิติ แล้วเอาความชัน
-// ใช้แถบกลางเพราะเป็นที่ที่ของอยู่จริง ขอบบน-ล่างมักเป็นฟ้ากับพื้นเรียบ ให้ค่าศูนย์
-const profileOf = (idx) => {
+// โปรไฟล์ความชัน 1 มิติของ "แถบ" หนึ่งแถบ (ช่วงแถว a–b เป็นเศษส่วนของความสูง)
+//
+// ⚠️ ต้องวัดหลายแถบแล้วเอาค่ากลาง ห้ามใช้แถบเดียว — บทเรียนเดียวกับหมุดเดี่ยวใน check-scene.mjs
+// วัดแถบกลางแถบเดียวแล้วเจอ false positive จริง: คลิป 17m อ่านได้ว่า "ถอย 0.65× r 0.87"
+// ที่ 27.5–29.25 วิ ทั้งที่กรอบภาพเท่าเดิม — ช่วงนั้นคือตอนที่คนเดินออกจากเฟรมพอดี
+// คนหายไปทำให้ลายเส้นในแถบนั้นเปลี่ยนยกแถบ ตัวหาสเกลจึงไปเจอค่าที่ "พอดี" กับภาพที่ต่างไป
+// การซูมจริงทำให้ **ทุกแถบ** ขยายพร้อมกัน คนเดินออกขยับได้ทีละแถบ ค่ากลางจึงไม่ตาม
+const BANDS = [[0.18, 0.35], [0.40, 0.60], [0.65, 0.85]];
+const profileOf = (idx, band) => {
   const off = idx * PW * PH;
-  const y0 = Math.floor(PH * 0.40), y1 = Math.floor(PH * 0.60);
+  const y0 = Math.floor(PH * band[0]), y1 = Math.floor(PH * band[1]);
   const p = new Float64Array(PW);
   for (let y = y0; y < y1; y++) for (let x = 0; x < PW; x++) p[x] += raw[off + y * PW + x];
   const n = y1 - y0;
@@ -120,6 +126,13 @@ const corr = (u, w) => {
 };
 
 // ยืด/หดโปรไฟล์รอบจุดกึ่งกลางด้วย factor s แล้วอ่านค่าแบบ linear
+//
+// ⚠️ ทิศของ s อ่านกลับง่ายมาก — เคยติดป้ายผิดมาแล้ว เขียนไว้ให้ชัด:
+// rescale(g, 2) = เอา g ครึ่งกลางมายืดเต็มความกว้าง = **ขยาย** g สองเท่า
+// ถ้า rescale(เฟรมหลัง, s>1) ไปเข้ากับเฟรมหน้าได้ แปลว่าเฟรมหลัง **เล็กกว่า** เฟรมหน้า
+//   → ภาพเล็กลงตามเวลา → กล้อง **ถอยห่าง**
+// s<1 จึงแปลว่าภาพใหญ่ขึ้น → กล้อง **เข้าใกล้**
+// เลขที่คนอ่านเข้าใจง่ายคือ "ภาพใหญ่ขึ้นกี่เท่า" = 1/s ตัวรายงานจึงกลับค่าให้ก่อนพิมพ์เสมอ
 const rescale = (g, s) => {
   const c = PW / 2, out = new Float64Array(PW);
   for (let x = 0; x < PW; x++) {
@@ -131,14 +144,20 @@ const rescale = (g, s) => {
 };
 
 // scale ของเฟรม i+1 เทียบเฟรม i — >1 คือภาพใหญ่ขึ้น (ซูมเข้า)
+// วัดทีละแถบแล้วเอาค่ากลางของแถบที่เชื่อได้ ต้องมีอย่างน้อย 2 แถบที่ r ผ่าน ไม่งั้นถือว่าวัดไม่ได้
 const steps = [];
 for (let i = 0; i + 1 < frameCount; i++) {
   const t = (i + 1) / FPS;
   if (cuts.some((c) => Math.abs(c.t - t) < 1 / FPS)) { steps.push({ t, s: null, r: null, cut: true }); continue; }
-  const ga = profileOf(i), gb = profileOf(i + 1);
-  let best = { s: 1, r: -2 };
-  for (const s of SCALES) { const r = corr(ga, rescale(gb, s)); if (r > best.r) best = { s, r }; }
-  steps.push({ t, s: best.s, r: best.r, cut: false });
+  const per = BANDS.map((band) => {
+    const ga = profileOf(i, band), gb = profileOf(i + 1, band);
+    let best = { s: 1, r: -2 };
+    for (const s of SCALES) { const r = corr(ga, rescale(gb, s)); if (r > best.r) best = { s, r }; }
+    return best;
+  });
+  const ok = per.filter((p) => p.r >= 0.5);
+  if (ok.length < 2) { steps.push({ t, s: null, r: median(per.map((p) => p.r)), cut: false }); continue; }
+  steps.push({ t, s: median(ok.map((p) => p.s)), r: median(ok.map((p) => p.r)), cut: false, bands: ok.length });
 }
 
 // รวมช่วงที่สเกลเบนจาก 1 ติดกัน = จังหวะซูม 1 ครั้ง
@@ -182,7 +201,8 @@ for (const s of shots) {
 const detailMed = median(shots.map((s) => s.detail).filter((x) => x !== null));
 
 // แถบภาพตัวแทนช็อต — เอาเฟรมกลางของแต่ละช็อตมาต่อกัน ไว้ยืนยันด้วยตาว่าเลขข้างบนอ่านถูก
-const strip = join(dirname(file), basename(file).replace(/\.[^.]+$/, '') + '-shots.png');
+const base = basename(file).replace(/\.[^.]+$/, '');
+const strip = join(dirname(file), base + '-shots.png');
 {
   const args = ['-v', 'error', '-y'];
   shots.forEach((s) => args.push('-ss', String(s.mid.toFixed(2)), '-i', file));
@@ -190,6 +210,27 @@ const strip = join(dirname(file), basename(file).replace(/\.[^.]+$/, '') + '-sho
     + ';' + shots.map((_, i) => `[v${i}]`).join('') + `hstack=inputs=${shots.length}[o]`;
   if (shots.length === 1) run('ffmpeg', [...args, '-vf', 'scale=200:-1', '-frames:v', '1', strip]);
   else run('ffmpeg', [...args, '-filter_complex', filt, '-map', '[o]', '-frames:v', '1', strip]);
+}
+
+// ตารางเฟรมทุก 0.5 วิ — เห็นทั้งคลิปในภาพเดียว รวมช่วงที่ไม่มีคัตด้วย
+// แถบช็อตข้างบนโชว์ช็อตละใบ ช็อตยาว 10 วิจึงเหลือแค่ใบเดียว มองไม่เห็นว่าข้างในเกิดอะไร
+// ตารางนี้ปิดช่องนั้น — เวลาคงที่ ไม่ขึ้นกับว่าตัวตรวจหาคัตเจอหรือไม่เจอ
+const GRID_COLS = 10, GRID_STEP = 0.5;
+const gridN = Math.ceil(dur / GRID_STEP);
+const gridRows = Math.ceil(gridN / GRID_COLS);
+const grid = join(dirname(file), base + '-grid.png');
+{
+  const font = 'C\\:/Windows/Fonts/arialbd.ttf';
+  const dt = `drawtext=fontfile='${font}':text='%{pts\\:flt}':x=5:y=5:fontsize=20`
+    + `:fontcolor=yellow:box=1:boxcolor=black@0.65:boxborderw=4`;
+  const vf = `fps=${1 / GRID_STEP},scale=200:-1,${dt},tile=${GRID_COLS}x${gridRows}:padding=4:color=white`;
+  const r = run('ffmpeg', ['-v', 'error', '-y', '-i', file, '-vf', vf, '-frames:v', '1', grid]);
+  // ไม่มีฟอนต์ = drawtext พัง ทั้งภาพหายไปเลย ไม่ใช่แค่ไม่มีตัวเลข → ต้องมีทางถอย
+  if (r.code !== 0 || !existsSync(grid)) {
+    run('ffmpeg', ['-v', 'error', '-y', '-i', file,
+      '-vf', `fps=${1 / GRID_STEP},scale=200:-1,tile=${GRID_COLS}x${gridRows}:padding=4:color=white`,
+      '-frames:v', '1', grid]);
+  }
 }
 
 // ---------- รายงาน ----------
@@ -215,9 +256,13 @@ console.log(`\n— กล้องขยับในช็อตไหม (ส�
 if (!zooms.length) console.log('  ไม่พบการเคลื่อนกล้องที่เกิน 6% — กล้องนิ่งอยู่กับที่ตลอดทุกช็อต');
 zooms.forEach((m, i) => {
   const rMed = median(m.rs);
-  console.log(`  #${i + 1} ${m.dir > 0 ? 'เข้าใกล้' : 'ถอยห่าง'} ${f(m.from)}–${f(m.to)} วิ · นาน ${f(m.to - m.from)} วิ · ${f(m.factor, 3)}× · r ${f(rMed)}${rMed < 0.5 ? ' ⚠️ เชื่อไม่ได้' : ''}`);
+  const mag = 1 / m.factor;                      // ภาพใหญ่ขึ้นกี่เท่า — >1 คือกล้องเข้าใกล้
+  console.log(`  #${i + 1} ${mag > 1 ? 'เข้าใกล้ (ภาพใหญ่ขึ้น)' : 'ถอยห่าง (ภาพเล็กลง)'} `
+    + `${f(m.from)}–${f(m.to)} วิ · นาน ${f(m.to - m.from)} วิ · ${f(mag, 2)}× · r ${f(rMed)}`
+    + `${rMed < 0.5 ? ' ⚠️ เชื่อไม่ได้' : ''}`);
 });
 console.log(`  (การเปลี่ยนขนาดภาพแบบ *คัต* ไม่โผล่ตรงนี้ — ไปดูที่ตารางช็อตข้างบน)`);
 
 console.log(`\nแถบภาพตัวแทนช็อต → ${strip}`);
+console.log(`ตารางเฟรมทุก ${GRID_STEP} วิ → ${grid}  (${GRID_COLS} คอลัมน์ · ${gridN} ใบ · อ่านซ้ายไปขวา บนลงล่าง)`);
 console.log('');

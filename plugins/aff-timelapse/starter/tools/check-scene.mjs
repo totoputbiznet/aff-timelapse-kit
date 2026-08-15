@@ -20,6 +20,10 @@ const MIN_PIN_CONTRAST = 25;             // ต่ำกว่านี้ถื
 const DUR_MIN = 7.5, DUR_MAX = 8.6;
 const VOL_MIN = -35, VOL_MAX = -15;
 const BRIGHT_SPREAD_WARN = 45;
+const SAT_MIN = 18;                      // ความอิ่มสีขั้นต่ำของภาพจบ — ต่ำกว่านี้ภาพดูซีด
+const CUT_THRESH = 0.20;                 // เกณฑ์ scene score ที่นับว่าเป็นคัต
+const CUT_MAX = 5;                       // สั่งไป 2-3 ครั้ง เกิน 5 = ตัดมั่ว
+const CUT_TAIL_GUARD = 1.0;              // ห้ามมีคัตใน N วินาทีสุดท้าย — รอยต่อ F2F จะขาด
 
 const sceneDir = process.argv[2];
 const stageArg = (process.argv.includes('--stage')
@@ -170,6 +174,29 @@ const meanVolume = (file) => {
   return m ? parseFloat(m[1]) : null;
 };
 
+// ความอิ่มสีเฉลี่ยทั้งภาพ — signalstats พิมพ์ที่ stderr ระดับ info ต้องไม่ใช้ -v error
+const saturation = (file) => {
+  const { err } = run('ffmpeg', ['-hide_banner', '-i', file, '-vf', 'signalstats,metadata=print', '-f', 'null', '-']);
+  const m = err.match(/SATAVG=([0-9.]+)/);
+  return m ? parseFloat(m[1]) : null;
+};
+
+// รอยคัตในคลิป — ใช้ scene score เหมือน tools/study-clip.mjs
+// เกณฑ์ต่ำกว่าค่ามาตรฐาน (0.3) ตั้งใจ เพราะคัตจากภาพกว้างไปโคลสอัพในฉากเดียวกัน
+// สี แสง พื้นหลังยังเหมือนเดิมเกือบหมด คะแนนจึงต่ำกว่าคัตข้ามฉาก
+const cutsIn = (video) => {
+  const { out } = run('ffmpeg', ['-v', 'error', '-i', video,
+    '-vf', `select='gt(scene,${CUT_THRESH})',metadata=print:file=-`, '-an', '-f', 'null', '-']);
+  const ts = [];
+  let t = null;
+  for (const line of (out || '').split('\n')) {
+    const pt = line.match(/pts_time:([0-9.]+)/);
+    if (pt) t = +pt[1];
+    if (/lavfi\.scene_score=/.test(line) && t !== null) { ts.push(t); t = null; }
+  }
+  return ts;
+};
+
 const frameAt = (video, which, tag) => {
   const outPng = join(tmp, `${tag}.png`);
   const args = which === 'first'
@@ -249,6 +276,16 @@ function stageFrames() {
   const brSpread = Math.max(...br) - Math.min(...br);
   rec('frames', 'ความสว่างไม่กระโดด', brSpread <= BRIGHT_SPREAD_WARN ? 'PASS' : 'WARN',
     `${br.map((b, i) => `P${i + 1} ${f(b)}`).join(' · ')} → ต่าง ${f(brSpread)}`);
+
+  // ภาพจบซีดไหม — ภาพที่คนดูค้างอยู่นานที่สุดคือช็อตท้าย ถ้ามันซีดคือเสียของทั้งคลิป
+  // เกณฑ์ 18 มาจากการวัดรีลจริง: ของเพจอ้างอิง 4/5 ใบผ่าน · ของเราตอนตั้งเกณฑ์ 1/6 ใบผ่าน
+  // ⚠️ SATAVG เป็นตัวชี้ ไม่ใช่ความสวย — ภาพอิ่มสีจัดแต่รกก็ได้คะแนนสูง จึงเป็น WARN ไม่ใช่ FAIL
+  const sat = saturation(framePath(4));
+  rec('frames', 'ภาพจบไม่ซีด (P4)',
+    sat === null ? 'SKIP' : sat >= SAT_MIN ? 'PASS' : 'WARN',
+    sat === null ? 'วัดไม่ได้'
+      : `SATAVG ${f(sat, 1)} (เกณฑ์ ${SAT_MIN})`
+        + (sat < SAT_MIN ? ' — เปิดไฟดวงจริงในเฟรม · เพิ่มของแต่งเป็นชั้น · ใส่ผ้ามีลายมีสี 1 ชิ้น' : ''));
   return true;
 }
 
@@ -362,6 +399,26 @@ function stageClips() {
 
     shiftCheck('กล้องเลื่อนในคลิป', first, last);
     shiftCheck(`เฟรมจบตรงกับ P${n + 1}`, last, framePath(n + 1));
+
+    // คัตไปโคลสอัพแล้วกลับมุมหลัก — สั่งใน Camera: ของสตอรีบอร์ด
+    // shiftCheck ข้างบนเทียบแค่เฟรมแรกกับเฟรมสุดท้าย คัตกลางคลิปจึงไม่โผล่ตรงนั้น ต้องนับแยก
+    const cuts = cutsIn(file);
+    const tail = cuts.filter((t) => dur - t <= CUT_TAIL_GUARD);
+    const list = cuts.length ? cuts.map((t) => f(t, 2) + 'วิ').join(' · ') : 'ไม่มี';
+
+    if (tail.length) {
+      // อันตรายจริงข้อเดียวของการคัต — เฟรมจบจะเป็นภาพคนละมุมกับภาพนิ่งเฟสถัดไป
+      rec('clips', `seg${n} · คัตท้ายคลิป`, 'FAIL',
+        `มีคัตใน ${CUT_TAIL_GUARD} วิสุดท้ายที่ ${tail.map((t) => f(t, 2) + 'วิ').join(' · ')} — รอยต่อ F2F ขาด ต้องยิงใหม่`);
+    } else if (cuts.length > CUT_MAX) {
+      rec('clips', `seg${n} · จำนวนคัต`, 'FAIL', `${cuts.length} คัต (เกิน ${CUT_MAX}) — ตัดมั่ว · ${list}`);
+    } else if (!cuts.length) {
+      // ไม่ใช่คลิปเสีย แค่ไม่ได้ของที่ขอ — ถ้าใบนั้นไม่ได้สั่งคัตไว้ก็ถือว่าปกติ
+      rec('clips', `seg${n} · จำนวนคัต`, 'WARN',
+        'ไม่พบคัตเลย — ถ้าสั่งคัตไว้ใน Camera: แปลว่าโมเดลไม่ทำตาม (ถ้าไม่ได้สั่งก็ข้ามข้อนี้ได้)');
+    } else {
+      rec('clips', `seg${n} · จำนวนคัต`, 'PASS', `${cuts.length} คัต · ${list}`);
+    }
   }
 
   rec('clips', 'ขนาด/fps เท่ากันทุกใบ', new Set(shapes).size === 1 ? 'PASS' : 'FAIL', shapes.join(' · '));
@@ -399,7 +456,9 @@ function stageReel() {
 function stageCaption() {
   const cap = join(sceneDir, 'final', 'caption.md');
   if (!existsSync(cap)) { rec('caption', 'มี final/caption.md', 'SKIP', 'ยังไม่ได้เขียน'); return; }
-  const blocks = [...readFileSync(cap, 'utf8').matchAll(/```\n([\s\S]*?)```/g)].map((m) => m[1].trim());
+  // \r?\n เพราะไฟล์ที่เขียนด้วยเครื่องมือคนละตัวบน Windows ได้ CRLF มา
+  // เคยอ่านได้ 0 บล็อกทั้งที่ไฟล์มีแคปชันครบ 3 แบบ เพราะ regex ผูกกับ \n ตัวเดียว
+  const blocks = [...readFileSync(cap, 'utf8').matchAll(/```\r?\n([\s\S]*?)```/g)].map((m) => m[1].trim());
   rec('caption', 'มีแคปชันอย่างน้อย 3 แบบ', blocks.length >= 3 ? 'PASS' : 'FAIL', `เจอ ${blocks.length} บล็อก`);
 
   blocks.forEach((b, i) => {

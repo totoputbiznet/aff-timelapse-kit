@@ -58,6 +58,31 @@ effort: high
 
 > ⚠️ โมเดลอาจให้ความยาวคลาดจากที่ตั้ง (ตั้ง 8 ได้ 9) **ไม่ต้องแก้** แค่ปรับไทม์ไลน์ตอนตัดต่อตามจริง
 
+## ขั้นที่ 1.5 — แบ่งงานลงคลิปตามลำดับ A/B/C ⭐ ทำก่อนเขียนพรอมต์
+
+**ถอดมาจากรีลจริง 6 ตัวของเพจอื่น (9–50 ล้านวิว)** — ลำดับการยกของเข้ามาเหมือนกันทุกใบ
+ทั้งงานในบ้านและนอกบ้าน · รายละเอียดเต็มอยู่ใน `timelapse_master_prompt.md` ของโปรเจค
+
+| คลิป | เฟส | ช่วง | ขั้น | ~เหตุการณ์ |
+|---|---|---|---|---|
+| **seg1** | P1→P2 | **A** เตรียมพื้นที่ | A1 ทำความสะอาด/ปรับพื้นที่ → A2 ลงฐาน/พื้น (เริ่ม) | 5–7 |
+| **seg2** | P2→P3 | **B** งานติดตั้ง | B1 ลงฐาน/พื้น (จบ) → B2 งานที่ยึดติดกับที่ **+ ไฟผนังสว่างขึ้น** | 5–7 |
+| **seg3** | P3→P4 | **C** ยกของเข้ามาจัด | C1 ของหนัก → C2 ของเล็กทีละ 1–2 ชิ้น → C3 ชิ้นเอกที่กางออก **+ โคมไฟตั้งพื้น** | 6–8 |
+
+**ขั้นลงฐาน/พื้นคร่อมสองคลิป (A2 → B1) โดยตั้งใจ** — เป็นขั้นที่กินเวลานานที่สุดเสมอ
+(วัดจากคลิปจริง 8.5–11 วิ) **เกินเพดาน ~10 วิที่โมเดลสร้างได้ในคลิปเดียว**
+และ P2 = "ระหว่างทำ" ก็คือกลางขั้นนี้พอดี รอยต่อจึงลงตัวโดยไม่ต้องฝืน
+
+⚠️ **"ไฟ" เป็นสองอย่างคนละขั้น อย่ารวมเป็นข้อเดียว**
+
+| | อยู่ขั้นไหน |
+|---|---|
+| **ไฟที่ยึดติดอาคาร** โคมผนัง โคมเพดาน ไฟใต้ชั้น | **B2** — สว่างขึ้นท้าย seg2 แล้วค้างยาวจนจบ → **`phase3.png` ต้องมีไฟติดอยู่แล้ว** |
+| **โคมไฟตั้งพื้น/ปักดิน** ยกเข้ามาวางได้ | **C3** — ของแต่งชิ้นสุดท้ายของ seg3 |
+
+⛔ **ขั้นที่อยู่คนละช่วงห้ามสลับที่กัน** — ของแต่ง (C) โผล่ใน seg2 = styling-leak ·
+งานติดตั้ง (B) โผล่ใน seg3 = ได้ลำดับเข้า-ออก-เข้า ซึ่งเป็นบั๊กที่เคยเจอมาแล้วสองฉาก
+
 ## ขั้นที่ 2 — โครงพรอมต์ 8 บล็อก
 
 ```
@@ -72,22 +97,56 @@ Overall: · Camera: · Subject: · Action: · Lighting: · Sound Effects: · Dia
 >
 > **ค่าในทุกบล็อกเป็นภาษาอังกฤษ** หัวข้อกับคำอธิบายในสตอรีบอร์ดเป็นไทยได้
 
-### `Camera:` — ยัดหมุดอ้างอิงไว้ที่นี่
+### `Camera:` — หมุดอ้างอิง + กำกับเวลาโคลสอัพ
 
 ```
 Completely static wide-angle shot, no camera movement whatsoever, fixed perspective
 throughout the entire sequence. <หมุดอ้างอิง 3-4 อย่างจาก CAMERA LOCK CARD เป็นประโยคเดียว>
 stay in exactly the same place for all <N> seconds.
+At about <วินาที> seconds the sequence cuts to a close shot of the hands <ทำอะไร>,
+holding for about one second, then cuts back to the identical wide angle above,
+framed exactly as before. <ทำซ้ำอีก 1-2 ครั้ง คนละวินาที คนละงาน>
 ```
 
-### `Subject:` — บังคับคนเต็มตัว
+ตัวอย่างจริง:
+
+> *At about 2 seconds the sequence cuts to a close shot of the hands tightening a bolt on the
+> bench frame, holding for about one second, then cuts back to the identical wide angle above,
+> framed exactly as before. At about 5 seconds it cuts again to a close shot of the hands
+> tapping a table leg into its socket, then cuts back to the same wide angle.*
+
+**กติกา 3 ข้อ:**
+
+1. **ระบุเป็นวินาที** ไม่ใช่ "ตอนกลางคลิป" — โมเดลต้องรู้ว่าวางตรงไหน
+2. **ระบุว่ามือทำอะไร** ไม่ใช่แค่ "ตัดไปโคลสอัพ" — งานที่ทำคือสิ่งที่ทำให้ช็อตมีอะไรให้ดู
+3. **2–3 ครั้งต่อคลิป** และ **ห้ามอยู่ใน 1 วินาทีสุดท้าย** — เฟรมจบต้องตรงกับภาพนิ่งเฟสถัดไป
+   ถ้าคัตไปโคลสอัพแล้วคลิปจบตรงนั้น **รอยต่อ F2F ขาดทันที** (`check-scene` จับข้อนี้ให้)
+
+> **วางโคลสอัพตรงงานที่มีจังหวะ** — เคาะ ขัน กด ปาด ไม่ใช่ตรงตอนเดินหรือตอนยืนดู
+> รีลจริงคัตรัวตรงงานที่มีจังหวะเสมอ (คลิป 29 ล้าน มี 5 ช็อตใน 1.7 วิ ตอนเคาะค้อนปูพื้น)
+
+**⚠️ ข้อนี้ยังไม่มีสถิติรองรับ** — `seedance_2_5` ผ่าน 5/5 คลิปจากพรอมต์ที่เขียน
+`fixed perspective throughout` ทุกใบ **ไม่เคยถูกสั่งให้คัตเลยสักครั้ง**
+**ทดสอบกับคลิปเดียวก่อน อย่าใส่ทั้งสามใบพร้อมกัน**
+
+### `Subject:` — คนเต็มตัวในภาพกว้าง มือได้ในโคลสอัพ
 
 ```
-<กี่คน> in <เสื้อผ้าธรรมดา>. Each one is shown FULL BODY, head to feet, walking in
-through the frame edge and walking out again. Always seen from behind or in motion
-blur, never facing the camera. No disembodied hands or arms - whenever an item is
-placed, the whole person who placed it is visible in the frame.
+<กี่คน> in <เสื้อผ้าธรรมดา>, wearing the same clothes for the whole sequence. In the wide
+shots each one is shown FULL BODY, head to feet. Always seen from behind or in motion blur,
+never facing the camera. No disembodied hands or arms: every arm in frame runs off the edge
+of the frame and stays attached to a body, never ending in mid-air inside the frame.
 ```
+
+**เปลี่ยนอะไรจากเดิมและทำไม:**
+
+| เดิม | ใหม่ | เพราะ |
+|---|---|---|
+| `No disembodied hands or arms` | **เก็บไว้เหมือนเดิม** | นี่คือบั๊กจริงที่เคยเจอ — แขนจบกลางอากาศไม่ต่อกับตัวใคร ดูหลอน |
+| `whenever an item is placed, the whole person who placed it is visible in the frame` | `every arm in frame runs off the edge of the frame and stays attached to a body` | ประโยคเดิม**กว้างเกินไปจนปิดโคลสอัพทุกแบบ** · รีลจริง 6/6 ใช้โคลสอัพที่แขนถูก**ขอบเฟรม**ตัด และไม่มีสักใบที่แขนตัดขาดกลางเฟรม |
+| — | `wearing the same clothes for the whole sequence` | รีลจริงเป็นคนเดิมชุดเดิมทั้งคลิป เป็นตัวละคร ไม่ใช่คนงานนิรนาม |
+
+**แขนถูกขอบเฟรมตัด ≠ แขนตัดขาดกลางเฟรม** — สองอย่างนี้คนละเรื่อง อย่าห้ามรวมกัน
 
 ### `Action:` ⛔ **ต้องเป็น active voice ขึ้นต้นทุกวรรคด้วยคนทำ**
 
@@ -104,12 +163,73 @@ placed, the whole person who placed it is visible in the frame.
 
 > *a worker **walks in** from the right carrying a folded teak chair, **sets it down**, **unfolds it** and **walks out**; a second worker **walks in** carrying a beige cushion, **drops it** onto the seat, **pats it flat** and **walks out**...*
 
-**กฎเหล็ก 4 ข้อของบล็อกนี้:**
+⚠️ **แต่ตัวอย่างข้างบนยังเดินออกทุกวรรค ซึ่งกฎข้อ 2 เปลี่ยนแล้ว** เก็บไว้เพื่อให้เห็น
+active เทียบ passive เท่านั้น · ตัวอย่างที่ถูกตามกฎปัจจุบันอยู่ข้างล่าง:
+
+> *a worker **drags** the slatted bench frame across the deck and **tightens** each bolt in turn;
+> a worker **slides** the finished bench along the LEFT side and **presses** it flush against the posts;
+> a worker **taps** each table leg into its socket with the heel of one hand, then **smooths** the
+> tabletop flat; a worker **peels** the blue protective film off the roof beams in one long strip,
+> balls it up and **walks out**. No instant appearances. The final second is completely still and
+> empty of people.*
+
+**4 วรรค · เดินออกวรรคเดียว · ทุกวรรคมีกริยาจังหวะ · ของหนักถูกลากไม่ใช่ยก**
+
+**กฎเหล็ก 8 ข้อของบล็อกนี้:**
 
 1. ทุกวรรคขึ้นต้นด้วย `a worker` / `two workers` — **ห้ามขึ้นต้นด้วยชื่อสิ่งของ**
-2. วรรคที่มีคนต้องปิดด้วยการเดินออก (`and walks out`)
-3. คั่นวรรคด้วย semicolon เรียงตามลำดับเวลาจริง
+2. **เดินออก (`and walks out`) เฉพาะวรรคสุดท้ายวรรคเดียว** วรรคอื่นตัดจบตอนทำเสร็จ
+3. คั่นวรรคด้วย semicolon เรียงตามลำดับเวลาจริง — **3–4 วรรค ไม่ใช่ 7–8**
 4. ปิดบล็อกด้วย `No instant appearances.` และ `The final second is completely still and empty of people.`
+5. ทุกวรรคต้องมี**กริยาที่ทำซ้ำเป็นจังหวะได้** — `presses` `taps` `slots` `tightens` `smooths`
+   `peels` ไม่ใช่ `lifts` `places` เฉยๆ · จังหวะคือสิ่งที่ทำให้ช็อตมีอะไรดูตลอด 2 วิ และเป็นที่ที่โคลสอัพไปเกาะ
+6. **เรียงตามช่วง A/B/C ของคลิปนั้น** (ขั้นที่ 1.5) ห้ามข้ามช่วง
+7. **กริยาต้องตรงกับน้ำหนักของ** ดูตารางข้างล่าง
+8. **ของที่กินเวลา ≥ 2 วิ ใส่ได้ไม่เกิน 2 ชิ้นต่อคลิป** ดูหัวข้อข้างล่าง
+
+### ข้อ 2 — ทำไมตัด `walks out` ออกจากวรรคกลาง
+
+`seg2` ของฉากจริงเคยมี **7 รอบ `walk in … walk out` ใน 8 วินาที** = รอบละ ~1.1 วิ
+ซึ่งต้องแบ่งเวลาให้ **เดินเข้า + ทำงาน + เดินออก** ครบในนั้น **แทบไม่เหลือเวลาให้เห็นการลงมือทำ**
+
+รีลจริงใช้เวลาต่อขั้นพอๆ กัน (0.6–1.3 วิ) แต่**ทั้งช็อตเป็นการทำ** ช็อตเริ่มตอนมือทำอยู่แล้ว
+ตัดทันทีที่วางเสร็จ ไม่มีเดินเข้า ไม่มีเดินออก
+
+> ⚠️ **การตัด `walks in` ออก ไม่ได้ทำให้กลับไปเป็น passive voice**
+> บั๊กแขนลอยเกิดจากการเอา**สิ่งของ**ขึ้นเป็นประธาน (`a cushion is carried in and placed`)
+> ไม่ได้เกิดจากการไม่มีคำว่า `walks in` — `a worker presses each deck tile flat`
+> **ยังเป็น active voice เต็มตัว คนยังเป็นประธาน** กฎข้อ 1 จึงยังแข็งที่สุด **ห้ามรื้อ**
+
+**กฎ "วินาทีสุดท้ายไม่มีคน" บังคับแค่วรรคสุดท้าย** — เฟรมจบต้องตรงกับภาพนิ่งเฟสถัดไปที่ไม่มีคน
+วรรคกลางไม่ต้องเดินออกเลย
+
+### ข้อ 7 — กริยาต้องตรงกับน้ำหนักของ
+
+**รีลจริงมีคนเดียว ฟิสิกส์เลยบังคับวิธียกของ และนั่นคือสิ่งที่ทำให้ดูจริง**
+
+| น้ำหนัก/ขนาด | เขียนว่า | ห้ามเขียนว่า |
+|---|---|---|
+| **หนักและใหญ่** เตียง โซฟา ตู้ | `drags` `slides` `pushes` — ถัดไปกับพื้น | `carries` `lifts` |
+| **ยาวเป็นมัด** ไม้ปูพื้น แผ่นระแนง | `carries in one bundle` แล้ว `unpacks` | เดินเข้าออกหลายเที่ยว |
+| **เล็ก** จาน หมอน ของบนชั้น | `places one at a time` ชิ้นละวรรคย่อย | วางรวดเดียวทั้งกอง |
+
+**ใช้ `a worker` คนเดียวเป็นค่าเริ่มต้น** ใช้ `two workers` เฉพาะของที่คนเดียวยกไม่ไหวจริง —
+สองคนยกอะไรก็ได้ ของหนักเลยไม่เคยถูกลาก ซึ่งเป็นจังหวะที่ดูจริงที่สุดจังหวะหนึ่ง
+
+**ของกลุ่มเดียวกันต้องสะสมให้เห็นเป็นขั้น** เขียนว่า `hangs the first few shirts, then fills the rail`
+ไม่ใช่ `hangs the shirts` — รีลจริงราวแขวนเสื้อไป 3 ตัว → 6 ตัว → เต็มราว
+
+### ข้อ 8 — ของที่กินเวลานาน ไม่เกิน 2 ชิ้นต่อคลิป
+
+ของชิ้นใหญ่ที่ **กางออก / คลี่ออก / ยกขึ้น / พับลง** ได้ กินเวลาหลายวินาทีโดยที่ภาพยังเปลี่ยนตลอด
+รีลจริงใช้ **4 วินาทีเต็มกับร่มคันเดียว** (พับอยู่ → เอียงขึ้น → เริ่มกาง → กางเต็ม)
+เป็นเหตุการณ์ที่ยาวที่สุดของคลิปและเป็น payoff
+
+⭐ **สินค้าของโปรเจคนี้เข้าข่ายเยอะ** — ศาลา ร่ม กันสาด ฉากกั้นพับได้ ชิงช้า
+ให้จังหวะกางออกของสินค้าเป็นเหตุการณ์ที่ยาวที่สุดของ `seg3`
+
+⛔ **แต่ไม่เกิน 2 ชิ้นต่อคลิป** เกินกว่านี้ภาพค้างอยู่กับของชิ้นเดิมนานเกินไป **คลิปน่าเบื่อ**
+งบ 8 วิ: 2 ชิ้น × 2–3 วิ = 4–6 วิ เหลือ 2–4 วิให้เหตุการณ์สั้นอีก 2–4 อย่าง รวมเป็น 6–8 เหตุการณ์
 
 > หลักฐาน: ในงานจริง seg1 กับ seg2 ได้คนเต็มตัวตั้งแต่รอบแรก เพราะสองใบนั้นเขียนว่า
 > *"the worker lifts..."* *"the worker sweeps..."* เป็น active อยู่แล้ว
@@ -188,8 +308,26 @@ ffmpeg -v error -y -i first.png -i last.png -filter_complex "[0][1]blend=all_mod
 ffmpeg -v error -y -i seg3.mp4 -vf "select='not(mod(n\,16))',scale=240:-1" -vsync 0 c%d.jpg
 ```
 
-แล้วต่อเป็น contact sheet ด้วย `hstack`/`vstack` **ดูทุกช่องว่าเห็นคนตั้งแต่หัวถึงเท้าไหม**
-เห็นแค่มือหรือแขนยื่นเข้ามา = **ไม่ผ่าน** ให้แก้ `Action:` เป็น active voice แล้วยิงใหม่
+แล้วต่อเป็น contact sheet ด้วย `hstack`/`vstack`
+
+**⚠️ อ่านผลให้ถูก — "แขนถูกขอบเฟรมตัด" กับ "แขนตัดขาดกลางเฟรม" คนละเรื่อง**
+
+| เห็นอะไร | ตัดสิน |
+|---|---|
+| ภาพกว้าง เห็นคนตั้งแต่หัวถึงเท้า | ✅ ปกติ |
+| **ภาพแคบ เต็มเฟรมด้วยมือกับของ แขนวิ่งออกนอกขอบเฟรม** | ✅ **นี่คือโคลสอัพที่ตั้งใจ** ไม่ใช่บั๊ก |
+| **ภาพกว้าง แล้วมีแขนลอยจบกลางอากาศ ไม่ต่อกับตัวใคร** | ❌ บั๊กแขนลอย แก้ `Action:` เป็น active voice แล้วยิงใหม่ |
+
+### 4.6 คัตไปโคลสอัพกี่ครั้ง ตรงวินาทีที่สั่งไหม
+
+```bash
+node tools/study-clip.mjs clips/seg2.mp4
+```
+
+อ่าน **ตารางช็อต** — จำนวนช็อตควรเท่ากับจำนวนคัตที่สั่งไว้ใน `Camera:` บวกหนึ่ง
+และเวลาของรอยคัตควรใกล้วินาทีที่สั่ง · **ห้ามมีคัตใน 1 วินาทีสุดท้าย**
+
+`check-scene.mjs` ด่าน `clips` ตรวจสามข้อนี้ให้อัตโนมัติแล้ว (`จำนวนคัต` · `คัตท้ายคลิป`)
 
 ### เกณฑ์ตัดสิน
 
@@ -197,8 +335,11 @@ ffmpeg -v error -y -i seg3.mp4 -vf "select='not(mod(n\,16))',scale=240:-1" -vsyn
 |---|---|---|
 | ไม่มี stream เสียง หรือ −91 dB | ❌ | ยิงใหม่ เปิด Sound · **แก้ทีหลังไม่ได้** |
 | มีดนตรีหรือเสียงพูด | ❌ | เติม `NO music.` `Dialogue: No` แล้วยิงใหม่ |
-| แขนลอย ไม่เห็นคนเต็มตัว | ❌ | แก้ `Action:` เป็น active voice + `FULL BODY` ใน `Subject:` |
-| กล้องขยับ | ❌ | ย้ำ `no camera movement whatsoever, fixed perspective throughout` |
+| แขน**จบกลางอากาศ** ไม่ต่อกับตัวใคร | ❌ | แก้ `Action:` เป็น active voice + ย้ำประโยค `never ending in mid-air` |
+| แขนถูก**ขอบเฟรม**ตัดในช็อตแคบ | ✅ | นี่คือโคลสอัพที่ตั้งใจ ปล่อยได้ |
+| **มีคัตใน 1 วิสุดท้าย** | ❌ | รอยต่อ F2F ขาด — ย้ำ `never in the last second` แล้วยิงใหม่ |
+| สั่งคัตแล้วไม่มีคัตเลย | 🟡 | โมเดลไม่ทำตาม · คลิปยังใช้ได้ แต่ไม่ได้ของที่ขอ |
+| กล้องขยับ**ในช็อต** | ❌ | ย้ำ `no camera movement whatsoever, fixed perspective throughout` |
 | ของนิ่งไม่ตรงที่รอยต่อ | ❌ | เช็คว่าใช้ไฟล์ภาพเฟสเดียวกันจริงทั้งสองคลิป |
 | คนโผล่/หายตรงรอยต่อ | ✅ | ปกติของ timelapse ปล่อยได้ |
 | ความยาวคลาดจากที่ตั้ง 1 วิ | ✅ | ปรับไทม์ไลน์ตามจริง |
