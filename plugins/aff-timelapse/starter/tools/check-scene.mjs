@@ -207,8 +207,16 @@ const saturation = (file) => {
 // ⚠️ ค่าที่ได้ไม่เคยใกล้ 1.0 (ของจริงอยู่ราว 0.55-0.60) เพราะทุกใบเป็น generative edit
 // ที่เรนเดอร์ใหม่ทั้งภาพ ไม่ใช่ inpaint ที่แปะเฉพาะโซน
 // → ตัดสินด้วย **ห่างจากใบที่ดีที่สุดของฉากเท่าไหร่** ไม่ใช่ค่าสัมบูรณ์
-const ssimBand = (fileA, fileB, band, tag) => {
-  const crop = `crop=iw*${band.w}:ih*${band.h}:iw*${band.x}:ih*${band.y}`;
+// ⭐ **`static_band` ใส่เป็นหลายกล่องได้** — เขียนเป็น array แล้วเครื่องจะวัดทีละกล่อง
+// แล้วเฉลี่ยถ่วงน้ำหนักด้วยพื้นที่ ใช้ตอนมีวัตถุที่**ไม่ใช่ `fixed`** โผล่เข้ามาในโซนห้ามเปลี่ยน
+// **ให้เว้นตัวมันออกไปเป็นช่อง แล้วนับมันเป็นของฝั่งเปลี่ยนได้** ไม่ใช่ปล่อยให้ไปถ่วงคะแนน
+//
+//   "static_band": [ {"x":0,"y":0,"w":0.45,"h":0.25}, {"x":0.78,"y":0,"w":0.22,"h":0.25} ]
+//
+// (ห้ามแก้ด้วยการ **ระบายทับ** ตัววัตถุด้วยสีเดียวกันทั้งสองภาพ เพราะพิกเซลที่เหมือนกันเป๊ะ
+//  จะได้ SSIM = 1.0 แล้วไปเจือค่าจริงให้สูงเกินจริง — ต้องตัดพื้นที่นั้นทิ้งไปเลย)
+const ssimOne = (fileA, fileB, box, tag) => {
+  const crop = `crop=iw*${box.w}:ih*${box.h}:iw*${box.x}:ih*${box.y}`;
   const a = join(tmp, `ssim-a-${tag}.png`), b = join(tmp, `ssim-b-${tag}.png`);
   run('ffmpeg', ['-v', 'error', '-y', '-i', fileA, '-vf', crop, a]);
   run('ffmpeg', ['-v', 'error', '-y', '-i', fileB, '-vf', crop, b]);
@@ -216,6 +224,18 @@ const ssimBand = (fileA, fileB, band, tag) => {
   const { err } = run('ffmpeg', ['-hide_banner', '-i', a, '-i', b, '-lavfi', 'ssim', '-f', 'null', '-']);
   const m = err.match(/All:([0-9.]+)/);
   return m ? parseFloat(m[1]) : null;
+};
+
+const ssimBand = (fileA, fileB, band, tag) => {
+  const boxes = Array.isArray(band) ? band : [band];
+  let sum = 0, area = 0;
+  for (const [i, box] of boxes.entries()) {
+    const v = ssimOne(fileA, fileB, box, `${tag}-${i}`);
+    if (v === null) return null;
+    const w = box.w * box.h;
+    sum += v * w; area += w;
+  }
+  return area > 0 ? sum / area : null;
 };
 
 // รอยคัตในคลิป — ใช้ scene score เหมือน tools/study-clip.mjs
@@ -334,14 +354,20 @@ function stageFrames() {
   // ที่กินคุณภาพไปหนึ่งทอดต่อการยิงหนึ่งครั้ง ถ้าเอา P1 (ห่าง P4 สองทอด) ไปเทียบกับ
   // P3 (ห่างทอดเดียว) บนไม้บรรทัดเดียวกัน P1 จะแพ้ตลอดทั้งที่ไม่ได้ผิดอะไร
   // โซ่ปกติคือ P4 → P3 → P1 → P2 ทับได้ที่คีย์ "chain": {"1":3,"2":3,"3":4}
-  const band = { ...STATIC_BAND, ...(inv.static_band ?? {}) };
+  const band = Array.isArray(inv.static_band)
+    ? inv.static_band.map((b) => ({ ...STATIC_BAND, ...b }))
+    : { ...STATIC_BAND, ...(inv.static_band ?? {}) };
   const chain = { 1: 3, 2: 3, 3: 4, ...(inv.chain ?? {}) };
   const ss = [1, 2, 3].map((n) => {
     const src = Number(chain[n] ?? chain[String(n)]);
     return { n, src, v: ssimBand(framePath(n), framePath(src), band, `p${n}`) };
   });
   const okv = ss.filter((o) => o.v !== null);
-  const bandTxt = `โซน x${band.x} y${band.y} w${band.w} h${band.h}`;
+  const boxes = Array.isArray(band) ? band : [band];
+  const bandTxt = boxes.length === 1
+    ? `โซน x${boxes[0].x} y${boxes[0].y} w${boxes[0].w} h${boxes[0].h}`
+    : `โซน ${boxes.length} กล่อง ` + boxes.map((b) => `[x${b.x} y${b.y} w${b.w} h${b.h}]`).join(' ')
+      + ' เฉลี่ยถ่วงน้ำหนักด้วยพื้นที่';
   if (okv.length < 2) {
     rec('frames', 'องค์ประกอบโซนที่ห้ามเปลี่ยน', 'SKIP', `วัด SSIM ไม่ได้ (${bandTxt})`);
   } else {
@@ -354,9 +380,11 @@ function stageFrames() {
     rec('frames', 'องค์ประกอบโซนที่ห้ามเปลี่ยน',
       best - worst > SSIM_FAIL ? 'FAIL' : lag.length ? 'WARN' : 'PASS',
       lag.length
-        ? `${detail} — ${lag.join(' · ')} · เปิดดูสองอย่าง `
-          + '(1) โซนที่วัดมีของกลุ่ม styling/product หรือคนงานโผล่เข้ามาไหม ถ้ามีให้แคบ "static_band" '
-          + 'ให้เหลือแต่ผนัง/รั้ว/ฝ้าที่นิ่งทั้งสี่เฟส (2) ถ้าโซนนิ่งจริงแต่ยังห่าง = ใบนั้นถูกวาดใหม่ '
+        ? `${detail} — ${lag.join(' · ')} · ดูแผ่นเทียบก่อนด้วย `
+          + '`node tools/contact-sheet.mjs <scene-dir>` แล้วตัดสินสองอย่าง '
+          + '(1) มีวัตถุที่ไม่ใช่ fixed กินพื้นที่ในโซนอยู่ไหม — ถ้ามี ให้ถือว่ามันเป็นของฝั่งเปลี่ยนได้ '
+          + 'แล้วเว้นตัวมันออกจากโซน โดยเขียน "static_band" เป็น array หลายกล่องล้อมรอบมัน '
+          + '(2) ถ้าโซนนิ่งจริงแต่ยังห่าง = ใบนั้นถูกวาดใหม่ '
           + 'ยิงซ้ำโดยแก้จากใบต้นทางในโซ่ **ใบเดียว** ห้ามใส่สองอ้างอิง'
         : `${detail} — ค่าราว 0.55-0.60 เป็นเพดานปกติของ generative edit ไม่ต้องไล่ให้ถึง 1.0`);
   }
