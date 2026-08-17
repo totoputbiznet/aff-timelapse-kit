@@ -63,6 +63,11 @@ effort: high
 เขียน `3 of the 8 timber slats already fixed to the wall` ไม่ใช่ `half-finished`
 คำว่า half-finished โมเดลตีความเป็น "เสร็จแล้วแต่ดูไม่เรียบร้อย" ทุกครั้ง
 
+> ⭐ **เปิด `products/<slug>/design.md` หัวข้อ INSTALL SEQUENCE ก่อนตัดสินว่า P2 ค้างอยู่ขั้นไหน**
+> ต้องค้างอยู่ที่ **ขั้นที่มีจังหวะซ้ำได้** (ตามที่ระบุไว้ในหัวข้อนั้น) ไม่ใช่ค้างที่ขั้นไหนก็ได้
+> เพราะขั้นนั้นคือที่ที่ `seg2` จะไปเกาะและเป็นจุดที่โคลสอัพลง
+> **และห้ามค้างข้ามขั้น** — แผ่นติดผนังอยู่ไม่ได้ถ้าโครงเคร่ายังไม่ขึ้น (กฎ "ห้ามของค้ำตัวเอง")
+
 > ### ⛔⛔ ตัวเลขนั้นต้องอยู่ราว **หนึ่งในสามถึงครึ่ง ไม่ใช่เกือบครบ**
 >
 > **P2 ไม่ได้ตัดสินแค่หน้าตาของ P2 มันตัดสินว่า `seg2` มีงานเหลือให้ทำหรือเปล่า**
@@ -126,7 +131,7 @@ effort: high
 ```json
 {
   "reference": "Image 1. Same <ชนิดพื้นที่>, same camera angle and position.",
-  "camera": "Exact same static wide-angle position as Image 1, same <ชนิดเพอร์สเปกทีฟ>, same framing, 9:16 vertical composition. <หมุดอ้างอิง 3-4 อย่างเป็นประโยคเดียว> all stay in exactly the same place.",
+  "camera": "Exact same static wide-angle position as Image 1, same <ชนิดเพอร์สเปกทีฟ>, same framing, 9:16 vertical composition. <หมุดอ้างอิง 3-4 อย่างเป็นประโยคเดียว> all stay in exactly the same place. Same footprint, no resizing, no morphing, no layout drift.",
   "scene": "Mid-installation phase. <ของที่ทำไปแล้วบางส่วน พร้อมสัดส่วนเป็นตัวเลข เช่น 3 of the 8 timber slats already fixed>. <วัสดุกองรอวางตรงไหน — ต้องเป็นวัสดุของงาน P2→P3 เท่านั้น>. <ของกันเปื้อน คลุมตรงไหน>. <เครื่องมือ 3-4 ชิ้น วางตรงไหน>. The finished furniture and plants are not there yet.",
   "subject": "One worker in a cap and a plain grey t-shirt, seen from behind, motion-blurred mid-stride, carrying <อะไร>, near the <ริมไหน> edge of the frame and partly cropped by it.",
   "product": "<สภาพของสินค้าตอนนี้ — ติดไปแล้วกี่ส่วน หรือยังอยู่ในกล่อง>",

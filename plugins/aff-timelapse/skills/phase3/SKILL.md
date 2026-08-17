@@ -93,7 +93,7 @@ effort: high
 ```json
 {
   "reference": "Image 1. Same <ชนิดพื้นที่>, same camera angle and position.",
-  "camera": "Exact same static wide-angle position as Image 1, same <ชนิดเพอร์สเปกทีฟ>, same framing, 9:16 vertical composition. <หมุดอ้างอิง 3-4 อย่างเป็นประโยคเดียว> all stay in exactly the same place.",
+  "camera": "Exact same static wide-angle position as Image 1, same <ชนิดเพอร์สเปกทีฟ>, same framing, 9:16 vertical composition. <หมุดอ้างอิง 3-4 อย่างเป็นประโยคเดียว> all stay in exactly the same place. Same footprint, no resizing, no morphing, no layout drift.",
   "scene": "The <ชื่องาน> work is finished but the <พื้นที่> has not been furnished yet. The floor is completely clear and freshly swept, with no furniture, no tools and no leftover material anywhere. <สิ่งที่ไม่เปลี่ยน> are unchanged.",
   "subject": "A finished but completely empty <พื้นที่>, ready to be furnished. No people, no furniture, no <ไล่ชื่อของที่ต้องหาย>.",
   "product": "<สินค้าที่ติดตั้งแล้ว> exactly as in Image 1, complete and unchanged.",
@@ -108,6 +108,24 @@ effort: high
 
 **คีย์ `product` ของใบนี้ต้องครบชุด** — P3 คือเฟรมที่โชว์สินค้าเต็มชุดครั้งแรก
 ถ้าเขียนคลุมเครือ ตัวตรวจจะขึ้น ERROR และคลิป seg3 จะไม่มีอะไรให้ยกเข้ามาจัด
+
+### ⭐ เขียน "ของที่ต้องหาย" เป็น **คำสั่ง** ไม่ใช่ **คำบรรยาย** (ของใหม่ 1.15.0)
+
+| ❌ คำบรรยาย โมเดลมองข้ามได้ | ✅ คำสั่ง โมเดลลงมือทำ |
+|---|---|
+| `No rug, no bench, no floor lamp, no mirror anywhere.` | `Remove the following from this stage: the rug, the bench, the floor lamp and the mirror.` |
+
+**วัดมาแล้ว** (`research/chain-test/RESULTS.md` · 18 ส.ค. 2569) — ยิง P3 จาก `phase4.png` ใบเดียวกัน
+สองแบบ ใบที่เขียนแบบ `no X` **ได้โคมไฟตั้งพื้นกับกระจกกลมโผล่กลับมา** ทั้งที่สั่งห้ามไว้ตรงตัว
+ส่วนใบที่เขียน `Remove the following:` สะอาดถูกต้อง · **SSIM เสมอกัน (0.9082 เทียบ 0.9129 = noise)
+แต่พรอมต์สั้นกว่า 3 เท่า (681 เทียบ 2,053 ตัวอักษร)**
+
+ตรงกับบทเรียนเดิมใน Blueprint ที่ว่า *"`no X` ผ่านตัวตรวจ แต่ไม่ได้แปลว่าโมเดลจะทำตาม"* —
+การทดลองนี้ชี้ทางแก้ที่ตรงกว่า **เปลี่ยนจากคำบรรยายเป็นคำสั่ง**
+
+⚠️ **n = 1 ยิงแบบละใบเดียว** ตัวเลข SSIM กับความยาวเชื่อได้ แต่เรื่อง "ลบของออกได้ดีกว่า"
+ยังเป็นข้อสังเกต **เก็บผลทุกครั้งที่ใช้ ถ้าครบ 5 ใบแล้วยังชนะ ค่อยเปลี่ยนเป็นรูปแบบบังคับ**
+คีย์ `negative` ของใบ P4 ยังใช้ `no X` เหมือนเดิม — ข้อนี้พูดถึงเฉพาะใบแก้ภาพ
 
 ## ขั้นที่ 3 — ตรวจพรอมต์ด้วยคำสั่งก่อนส่งให้ยิง ⭐ ห้ามข้าม
 

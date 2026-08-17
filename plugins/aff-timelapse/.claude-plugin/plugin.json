@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "aff-timelapse",
-  "version": "1.14.3",
+  "version": "1.15.0",
   "description": "ชุดเครื่องมือทำ Reels แนว timelapse ตกแต่งบ้านของเพจ Homey Vibes — เก็บสินค้า Shopee คิดไอเดียแต่งบ้าน ทำภาพ 4 เฟสที่มุมกล้องล็อกเป๊ะ ทำสตอรีบอร์ด frame-to-frame 3 ช่วง ตรวจคลิป แล้วรวมด้วย ffmpeg",
   "author": {
     "name": "Itthiphon Thanadkunkit"

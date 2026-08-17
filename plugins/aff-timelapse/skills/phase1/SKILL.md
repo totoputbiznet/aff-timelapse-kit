@@ -75,6 +75,25 @@ Phase 1 ไม่ใช่แค่ "เอาของออก" มันต�
 > ⚠️ **โซนวางสินค้าต้องโล่งสนิท** ตามที่ระบุใน CAMERA LOCK CARD
 > ถ้าตรงนั้นมีของอื่นอยู่ คนดูจะอ่านว่า "ของเดิมหายไป" แทน "ของใหม่ถูกเพิ่มเข้ามา"
 
+### ⭐ P1 ต้องอ่านว่า "กำลังจะทำ" ไม่ใช่ "ห้องร้าง" (ของใหม่ 1.15.0)
+
+**ใส่ร่องรอยการวางแผน 1-2 อย่างตรงโซนที่สินค้าจะไปอยู่** — เทปกาวตีเส้นบนพื้น · รอยชอล์ก ·
+ตลับเมตรวางทิ้งไว้ · กระดาษแบบพับวางที่พื้น · ดินสอช่างวางข้างๆ
+
+ถอดจากกฎ **ZERO-CONSTRUCTION START LOCK** ของมาสเตอร์พรอมต์งานก่อสร้าง ซึ่งบังคับให้ภาพแรก
+มี *"white powder layout marking only, workers marking layout, no excavation yet"*
+ที่ดินยังไม่ถูกแตะ **แต่เห็นชัดว่ากำลังจะเกิดอะไรขึ้น**
+
+P1 ของเราเดิมเป็นแค่ "ว่างเปล่า + ทรุดโทรม" ซึ่ง**ไม่มีสัญญาณว่ามีอะไรกำลังจะมา** —
+เป็นภาพที่คนดูเลื่อนผ่านได้ ร่องรอยการวางแผนคือสิ่งที่ทำให้ 3 วิแรกมีคำถามค้างในหัว
+
+⛔ **ห้ามมีวัสดุหรือชิ้นส่วนของสินค้าอยู่ในเฟรม** — นั่นคือ P2 แล้ว
+เส้นที่แบ่งคือ **"วางแผนไว้" กับ "ของมาถึงแล้ว"**
+
+⚠️ **ร่องรอยพวกนี้อยู่บนพื้น ซึ่งปกติอยู่นอก `static_band` (ปริยายบน 40%)**
+แต่ **ต้องยืนยันด้วย `probe-band` ต่อฉาก อย่าเหมาว่าปลอดภัย** — ฉากที่โซนวัดกินลงมาถึงพื้น
+จะโดนด่าน SSIM ทันที ถ้าเจอให้เว้นโซนด้วย `static_band` หลายกล่อง ไม่ใช่ถอดร่องรอยออก
+
 ## ขั้นที่ 3 — เขียนไฟล์ (พรอมต์เป็น JSON เท่านั้น)
 
 > ⛔ **พรอมต์แก้ภาพที่ยาวเกินและมีคำสั่งห้ามเยอะ จะ Generation failed ไปเลย ไม่ใช่แค่ผลไม่ดี**
@@ -97,9 +116,9 @@ Phase 1 ไม่ใช่แค่ "เอาของออก" มันต�
 ```json
 {
   "reference": "Image 1. Same <ชนิดพื้นที่>, same camera angle and position.",
-  "camera": "Exact same static wide-angle position as Image 1, same <ชนิดเพอร์สเปกทีฟ>, same framing, 9:16 vertical composition. <หมุดอ้างอิง 3-4 อย่างจาก CAMERA LOCK CARD เขียนต่อกันเป็นประโยคเดียว> all stay in exactly the same place.",
-  "scene": "The same <พื้นที่> before any renovation. <พื้นผิวเปล่าที่ควรเห็นแทน + ร่องรอยความยังไม่ได้ทำ 1-2 อย่าง> <สิ่งที่ไม่เปลี่ยน: unchanged>",
-  "subject": "An empty unused <พื้นที่> that nobody has decorated yet. No people, no furniture, no plants, no <สินค้า>.",
+  "camera": "Exact same static wide-angle position as Image 1, same <ชนิดเพอร์สเปกทีฟ>, same framing, 9:16 vertical composition. <หมุดอ้างอิง 3-4 อย่างจาก CAMERA LOCK CARD เขียนต่อกันเป็นประโยคเดียว> all stay in exactly the same place. Same footprint, no resizing, no morphing, no layout drift.",
+  "scene": "The same <พื้นที่> before any renovation. <พื้นผิวเปล่าที่ควรเห็นแทน + ร่องรอยความยังไม่ได้ทำ 1-2 อย่าง> <ร่องรอยการวางแผน 1-2 อย่างตรงโซนวางสินค้า> <สิ่งที่ไม่เปลี่ยน: unchanged>",
+  "subject": "An empty unused <พื้นที่> that nobody has decorated yet. Remove the following from this stage: <ไล่ชื่อของที่ต้องหายทีละชิ้น> — no people anywhere.",
   "palette": "<โทนสีของพื้นผิวเปล่า — ปูนดิบ ดินเปล่า ผนังซีด>",
   "lighting": "Same <ทิศและช่วงเวลาแสง>, same <เงาเด่นๆ ที่ต้องคงไว้>.",
   "style": "Photorealistic, architectural documentation photography, before-renovation stage."
@@ -117,7 +136,11 @@ Phase 1 ไม่ใช่แค่ "เอาของออก" มันต�
 | `Edit the attached image. Do not... Do not...` | คีย์ `reference` — `Image 1. Same X, same camera angle and position.` |
 | ลิสต์หมุดทีละบรรทัดพร้อมพิกัด % | รวมหมุดเป็นประโยคเดียวในคีย์ `camera` ไม่ใส่ % |
 | บล็อก `REMOVE COMPLETELY` ไล่ชื่อของ | บรรยายสภาพปลายทางว่าไม่มีอะไรอยู่ ในคีย์ `scene` กับ `subject` |
-| บล็อก `NEGATIVE:` ยาวเป็นพรืด | คำว่า `No people, no furniture, no plants` สั้นๆ ในคีย์ `subject` |
+| บล็อก `NEGATIVE:` ยาวเป็นพรืด | `Remove the following from this stage: <ไล่ชื่อทีละชิ้น>` สั้นๆ ในคีย์ `subject` |
+
+> ⭐ **เขียนของที่ต้องหายเป็น *คำสั่ง* ไม่ใช่ *คำบรรยาย*** (ของใหม่ 1.15.0)
+> `Remove the following from this stage: the rug, the bench, the lamp` ชนะ `no rug, no bench, no lamp`
+> วัดมาแล้ว — ใบที่เขียน `no X` ได้ของที่สั่งห้ามโผล่กลับมา · รายละเอียดใน `phase3/SKILL.md`
 
 > **ใบ P1-P3 ไม่มีคีย์ `negative` กับ `critical`** สองคีย์นั้นมีเฉพาะใบ P4
 > ที่นี่เป็นการ**แก้ภาพ** ไม่ใช่สร้างใหม่ ยัดคำห้ามเยอะคือสิ่งที่ทำให้ failed มาแล้ว
