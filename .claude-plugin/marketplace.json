@@ -10,7 +10,7 @@
       "name": "aff-timelapse",
       "source": "./plugins/aff-timelapse",
       "description": "ชุดเครื่องมือทำ Reels แนว timelapse ตกแต่งบ้าน — เก็บสินค้า Shopee คิดไอเดียแต่งบ้าน ทำภาพ 4 เฟสที่มุมกล้องล็อกเป๊ะ ทำสตอรีบอร์ด frame-to-frame 3 ช่วง ตรวจคลิป แล้วรวมด้วย ffmpeg",
-      "version": "1.14.1",
+      "version": "1.14.2",
       "author": {
         "name": "Itthiphon Thanadkunkit"
       },
