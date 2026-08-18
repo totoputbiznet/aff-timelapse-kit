@@ -42,10 +42,37 @@ const has = (kws) => (kws || []).some(k => haystack.includes(k.toLowerCase()));
 //   "the pavilion is up"           → ไม่ครอบ ต้องบอกเป็นชิ้นๆ ว่าม้านั่งอยู่หรือไม่อยู่
 // นี่คือจุดที่บั๊กม้านั่งใน P2 เกิด ถ้าปล่อยให้ครอบแบบไม่ดูการปฏิเสธ เครื่องมือจะจับไม่ได้
 const NEG = ['no ', 'not ', 'without ', 'never '];
+
+// ช่วง "คำสั่งให้ลบ" — ตั้งแต่กริยาลบไปจนจบประโยคนั้น
+//
+// ⚠️ ทำไมต้องมี: พรอมต์แบบ "บอกเฉพาะส่วนต่าง" (วัดแล้วชนะพรอมต์เต็มใบ · 1.15.0) เขียนว่า
+//   "Remove the following from this stage: the rug, the cushions, the throw, the tray, ..."
+// ชื่อของชิ้นท้ายๆ อยู่ห่างจากคำว่า Remove เป็นร้อยตัวอักษร **เกินหน้าต่างมองย้อนหลัง 24 ตัว**
+// ตัวตรวจจึงอ่านว่าของพวกนั้น "อยู่ในเฟรมแล้ว" → ขึ้น styling-leak ปลอมทั้งชุด
+// (เจอจริงกับฉาก canalside 18 ส.ค. — leak ปลอม 9 รายการทั้งที่พรอมต์สั่งลบทุกชิ้น)
+//
+// ขยายหน้าต่างเฉยๆ ไม่ได้ เพราะจะไปคาบประโยคข้างเคียงแล้วเกิด false negative แทน
+// จึงจับเป็น **ช่วง** ตั้งแต่กริยาลบถึงจุดจบประโยค
+const REMOVE_VERBS = ['remove the following', 'remove ', 'take out ', 'clear away ', 'strip out ', 'delete '];
+const removalSpans = (() => {
+  const spans = [];
+  for (const v of REMOVE_VERBS) {
+    let i = haystack.indexOf(v);
+    while (i !== -1) {
+      const end = haystack.indexOf('.', i);
+      spans.push([i, end === -1 ? haystack.length : end]);
+      i = haystack.indexOf(v, i + 1);
+    }
+  }
+  return spans;
+})();
+const insideRemoval = (i) => removalSpans.some(([a, b]) => i >= a && i < b);
+
 const coveredByNegation = (kws) => (kws || []).some(k => {
   const t = k.toLowerCase();
   let i = haystack.indexOf(t);
   while (i !== -1) {
+    if (insideRemoval(i)) return true;
     const before = haystack.slice(Math.max(0, i - 24), i);
     if (NEG.some(n => before.includes(n))) return true;
     i = haystack.indexOf(t, i + 1);
