@@ -28,7 +28,13 @@ const SSIM_WARN = 0.10;
 const SSIM_FAIL = 0.15;
 const STATIC_BAND = { x: 0, y: 0, w: 1, h: 0.4 };  // โซนที่ห้ามเปลี่ยน (สัดส่วน) — ทับได้ที่ phase4.json
 const CUT_THRESH = 0.20;                 // เกณฑ์ scene score ที่นับว่าเป็นคัต
-const CUT_MAX = 5;                       // สั่งไป 2-3 ครั้ง เกิน 5 = ตัดมั่ว
+// ⚠️ เพดานนี้เคยตั้งไว้ที่ 5 แล้วตัดสินผิด — **โคลสอัพ 1 ครั้งกิน 2 คัต (เข้า+ออก)**
+// สั่งโคลสอัพ 3 ครั้งจึงได้ 6 คัต 7 ช็อตโดยธรรมชาติ ไม่ใช่ความผิดพลาด
+// (เคสจริง 18 ส.ค. ฉาก canalside seg3 — 7 ช็อต ช็อตละค่ากลาง 1.06 วิ
+//  ซึ่งอยู่ในช่วง 0.63-1.29 วิของรีลจริงที่วัดมา แต่ตัวตรวจให้ FAIL)
+// เพดานนี้จึงเหลือไว้กันกรณีสุดโต่งเท่านั้น ตัวที่ตัดสินจริงคือความยาวช็อตข้างล่าง
+const CUT_MAX = 12;
+const SHOT_MIN_MEDIAN = 0.40;            // ช็อตค่ากลางสั้นกว่านี้ = ตัดถี่จนคนดูอ่านไม่ทัน
 const CUT_TAIL_GUARD = 1.0;              // ห้ามมีคัตใน N วินาทีสุดท้าย — รอยต่อ F2F จะขาด
 
 const sceneDir = process.argv[2];
@@ -507,6 +513,10 @@ function stageClips() {
     const cuts = cutsIn(file);
     const tail = cuts.filter((t) => dur - t <= CUT_TAIL_GUARD);
     const list = cuts.length ? cuts.map((t) => f(t, 2) + 'วิ').join(' · ') : 'ไม่มี';
+    // ความยาวช็อต = ช่วงระหว่างรอยคัต โดยนับต้นคลิปกับท้ายคลิปเป็นขอบด้วย
+    const bounds = [0, ...cuts, dur];
+    const shotLens = bounds.slice(1).map((b, i) => b - bounds[i]).filter((L) => L > 0.15);
+    const medShot = shotLens.length ? [...shotLens].sort((a, b) => a - b)[shotLens.length >> 1] : null;
 
     if (tail.length) {
       // อันตรายจริงข้อเดียวของการคัต — เฟรมจบจะเป็นภาพคนละมุมกับภาพนิ่งเฟสถัดไป
@@ -514,12 +524,17 @@ function stageClips() {
         `มีคัตใน ${CUT_TAIL_GUARD} วิสุดท้ายที่ ${tail.map((t) => f(t, 2) + 'วิ').join(' · ')} — รอยต่อ F2F ขาด ต้องยิงใหม่`);
     } else if (cuts.length > CUT_MAX) {
       rec('clips', `seg${n} · จำนวนคัต`, 'FAIL', `${cuts.length} คัต (เกิน ${CUT_MAX}) — ตัดมั่ว · ${list}`);
+    } else if (cuts.length && medShot !== null && medShot < SHOT_MIN_MEDIAN) {
+      // ตัวที่ตัดสินจริง — ไม่ใช่ "กี่คัต" แต่ "แต่ละช็อตอยู่นานพอให้อ่านทันไหม"
+      rec('clips', `seg${n} · ความยาวช็อต`, 'FAIL',
+        `ช็อตละค่ากลาง ${f(medShot, 2)} วิ (ต่ำกว่า ${SHOT_MIN_MEDIAN}) — ตัดถี่จนอ่านไม่ทัน · ${list}`);
     } else if (!cuts.length) {
       // ไม่ใช่คลิปเสีย แค่ไม่ได้ของที่ขอ — ถ้าใบนั้นไม่ได้สั่งคัตไว้ก็ถือว่าปกติ
       rec('clips', `seg${n} · จำนวนคัต`, 'WARN',
         'ไม่พบคัตเลย — ถ้าสั่งคัตไว้ใน Camera: แปลว่าโมเดลไม่ทำตาม (ถ้าไม่ได้สั่งก็ข้ามข้อนี้ได้)');
     } else {
-      rec('clips', `seg${n} · จำนวนคัต`, 'PASS', `${cuts.length} คัต · ${list}`);
+      rec('clips', `seg${n} · จำนวนคัต`, 'PASS',
+        `${cuts.length} คัต · ${cuts.length + 1} ช็อต ช็อตละค่ากลาง ${f(medShot, 2)} วิ (รีลจริง 0.63-1.29) · ${list}`);
     }
   }
 
